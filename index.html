@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover">
+  
+  <!-- Favicon and App Manifest -->
+  <link rel="icon" type="image/png" href="https://cdn.adalo.com/apps/e5d81076-8f9d-431d-8ca6-934e1a0b4db0/icon?size=32&radius=7" sizes="32x32">
+  <link rel="manifest" href="/app.webmanifest" crossorigin="use-credentials">
+  <link rel="apple-touch-icon" href="https://cdn.adalo.com/apps/e5d81076-8f9d-431d-8ca6-934e1a0b4db0/icon?size=180">
+
+  <!-- Fonts with fallbacks -->
+  <link rel="stylesheet" href="https://runtime-assets.adalo.com/sf-pro-text/stylesheet.css" onerror="console.warn('Failed to load SF Pro Text font')">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'SF Pro Text', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+
+  <!-- SEO Meta Tags -->
+  <title>PerundingAI - AI Consulting Platform</title>
+  <meta name="description" content="Advanced AI consulting platform built with Adalo">
+  <meta property="adalo:appId" content="e5d81076-8f9d-431d-8ca6-934e1a0b4db0"/>
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://perundingai.com/">
+  <meta property="og:title" content="PerundingAI - AI Consulting Platform">
+  <meta property="og:description" content="Advanced AI consulting platform built with Adalo">
+  <meta property="og:image" content="https://cdn.adalo.com/apps/e5d81076-8f9d-431d-8ca6-934e1a0b4db0/icon?size=1024">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://perundingai.com/">
+  <meta property="twitter:title" content="PerundingAI - AI Consulting Platform">
+  <meta property="twitter:description" content="Advanced AI consulting platform built with Adalo">
+  <meta property="twitter:image" content="https://cdn.adalo.com/apps/e5d81076-8f9d-431d-8ca6-934e1a0b4db0/icon?size=512">
+  <meta name="twitter:image:alt" content="PerundingAI">
+
+  <!-- Adalo Assets with error handling -->
+  <script defer="defer" src="https://runtime-assets.adalo.com/static/js/main.f53bdeac.js" onerror="console.error('Failed to load Adalo JS')"></script>
+
+  <!-- Custom Styles -->
+  <style>
+    /* Animation keyframes for spin */
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .loading {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: white;
+      transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+      transition-duration: 300ms;
+    }
+    .dark .loading {
+      background-color: #111827;
+    }
+    .loading-icon {
+      width: 4rem;
+      height: 4rem;
+      border-width: 4px;
+      border-color: #3b82f6;
+      border-top-color: transparent;
+      border-radius: 9999px;
+      animation: spin 1s linear infinite;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+  <noscript>
+    <div class="p-4 max-w-md mx-auto mt-10 bg-red-100 border border-red-400 text-red-700 rounded">
+      <p class="font-bold">JavaScript Required</p>
+      <p>You need to enable JavaScript to run this app.</p>
+    </div>
+  </noscript>
+  
+  <div id="root">
+    <div class="loading loading-expanded">
+      <div class="loading-icon"></div>
+    </div>
+  </div>
+</body>
+</html>
