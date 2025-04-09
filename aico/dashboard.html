@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AiCO Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="js/auth.js"></script>
+</head>
+<body class="bg-gray-50">
+  <div class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-blue-600">ByteChainPerundingAI Dashboard</h1>
+        <div id="profileSection" class="flex items-center space-x-4">
+          <span id="userEmail" class="text-gray-600"></span>
+          <button onclick="logout()" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
+            Logout
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow">
+      <div class="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+        <div class="bg-white shadow rounded-lg p-6">
+          <h2 class="text-xl font-semibold mb-4">Welcome to your AI Consultation Portal</h2>
+          <div class="grid md:grid-cols-2 gap-6">
+            <!-- Consultation Requests -->
+            <div class="border rounded-lg p-4">
+              <h3 class="font-medium mb-2">Recent Consultations</h3>
+              <div class="space-y-3">
+                <div class="p-3 bg-blue-50 rounded">
+                  <p class="font-medium">AI Strategy Session</p>
+                  <p class="text-sm text-gray-500">Scheduled: Tomorrow 10:00 AM</p>
+                </div>
+                <div class="p-3 bg-green-50 rounded">
+                  <p class="font-medium">Implementation Review</p>
+                  <p class="text-sm text-gray-500">Completed: 2 days ago</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="border rounded-lg p-4">
+              <h3 class="font-medium mb-2">Quick Actions</h3>
+              <div class="space-y-3">
+                <button class="w-full text-left p-3 bg-white border rounded hover:bg-gray-50">
+                  <i class="fas fa-calendar-plus mr-2"></i> Schedule New Consultation
+                </button>
+                <button class="w-full text-left p-3 bg-white border rounded hover:bg-gray-50">
+                  <i class="fas fa-file-alt mr-2"></i> View Reports
+                </button>
+                <button class="w-full text-left p-3 bg-white border rounded hover:bg-gray-50">
+                  <i class="fas fa-cog mr-2"></i> Account Settings
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200">
+      <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+        <p class="text-center text-sm text-gray-500">
+          &copy; 2023 ByteChainPerundingAI. All rights reserved.
+        </p>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    function logout() {
+      localStorage.removeItem("userToken");
+      window.location.href = "/index.html";
+    }
+    
+    // Check authentication on load
+    document.addEventListener("DOMContentLoaded", () => {
+      const token = localStorage.getItem("userToken");
+      if(!token) {
+        window.location.href = "/index.html";
+      } else {
+        const payload = parseJwt(token);
+        document.getElementById("userEmail").textContent = payload.email;
+      }
+    });
+    
+    function parseJwt(token) {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(atob(base64));
+    }
+  </script>
+</body>
+</html>
