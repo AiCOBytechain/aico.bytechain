@@ -1,0 +1,21 @@
+{
+  "name": "PerundingAI",
+  "short_name": "PerundingAI",
+  "description": "AI Consulting Platform",
+  "icons": [
+    {
+      "src": "https://cdn.adalo.com/apps/e5d81076-8f9d-431d-8ca6-934e1a0b4db0/icon?size=192",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://cdn.adalo.com/apps/e5d81076-8f9d-431d-8ca6-934e1a0b4db0/icon?size=512",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff"
+}
