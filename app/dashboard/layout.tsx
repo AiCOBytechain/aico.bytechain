@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/button"
 import { LogoLink } from "@/components/app-logo"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
-import { ViewToggle } from "@/components/view-toggle"
+import { ZoomControl } from "@/components/zoom-control"
 import { useRouter, usePathname } from "next/navigation"
 import {
   DropdownMenu,
@@ -47,30 +47,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     img.onload = () => setLogoLoaded(true)
     img.src = "/images/aico-enhanced-logo.png"
   }, [])
-
-  // Initialize view mode on component mount - with browser check
-  useEffect(() => {
-    // Only run in browser environment
-    if (typeof window !== "undefined") {
-      // Default to desktop view
-      document.body.classList.add("desktop-view-mode")
-      document.body.classList.remove("mobile-view-mode")
-    }
-  }, [])
-
-  // Handle view mode change
-  const handleViewChange = (mode: "desktop" | "mobile") => {
-    // Only run in browser environment
-    if (typeof window !== "undefined") {
-      if (mode === "mobile") {
-        document.body.classList.add("mobile-view-mode")
-        document.body.classList.remove("desktop-view-mode")
-      } else {
-        document.body.classList.add("desktop-view-mode")
-        document.body.classList.remove("mobile-view-mode")
-      }
-    }
-  }
 
   // Navigation items with paths
   const navItems = [
@@ -212,9 +188,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </form>
           </div>
           <div className="flex items-center space-x-4">
-            {/* View Toggle */}
+            {/* Zoom Control */}
             <div className="hidden md:block">
-              <ViewToggle onViewChange={handleViewChange} />
+              <ZoomControl />
             </div>
 
             <Button variant="ghost" size="icon" onClick={() => router.push("/notifications")}>
@@ -257,15 +233,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
       </div>
 
-      {/* View mode indicator for mobile */}
+      {/* Zoom control for mobile */}
       <div className="fixed bottom-4 right-4 z-50 lg:hidden">
-        <ViewToggle onViewChange={handleViewChange} />
+        <ZoomControl />
       </div>
 
       {/* Main content with scrollable container */}
       <main className="flex-1 lg:pl-64 pt-16 bg-transparent flex flex-col">
         <div className="scrollable-container flex-1 overflow-auto m-4 rounded-lg">
-          <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-sm min-h-full">{children}</div>
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-sm min-h-full zoom-content">{children}</div>
         </div>
       </main>
     </div>

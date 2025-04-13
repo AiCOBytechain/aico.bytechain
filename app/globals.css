@@ -45,6 +45,9 @@
     --seablue-700: 217 100% 30%;
     --seablue-800: 217 100% 20%;
     --seablue-900: 217 100% 10%;
+
+    /* Zoom level - default to 1 */
+    --app-zoom: 1;
   }
 
   .dark {
@@ -91,6 +94,22 @@
 body {
   background: linear-gradient(to bottom right, #e6f0ff, #f0e6ff);
   background-attachment: fixed;
+}
+
+/* Zoom functionality */
+.zoom-content {
+  transform: scale(var(--app-zoom));
+  transform-origin: top center;
+  transition: transform 0.2s ease-in-out;
+  width: calc(100% / var(--app-zoom));
+  margin: 0 auto;
+}
+
+/* Responsive adjustments for zoom */
+@media (max-width: 768px) {
+  .zoom-content {
+    width: calc(100% / var(--app-zoom));
+  }
 }
 
 /* Mobile view mode styles */
