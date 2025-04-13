@@ -8,34 +8,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Send,
-  Loader2,
-  FileSpreadsheet,
-  Upload,
-  FileUp,
-  Download,
-  Edit,
-  Check,
-  Plus,
-  Trash2,
-  AlertTriangle,
-  Sparkles,
-  BarChart,
-  Package,
-  RefreshCw,
-  TrendingUp,
-  TrendingDown,
-  LineChart,
-  PieChart,
-} from "lucide-react"
+import { Send, Loader2, AlertTriangle, Sparkles, BarChart, Package, RefreshCw } from "lucide-react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { TypingIndicator } from "@/components/typing-indicator"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { toast } from "@/components/ui/use-toast"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 // Sample inventory data for AI to reference
 const SAMPLE_INVENTORY = [
@@ -661,914 +639,360 @@ export default function AIConsultationPage() {
   }
 
   return (
-   <div className="relative min-h-[calc(100vh-4rem)]">
-     {/* Background with logo */}
-     <div 
-       className="absolute inset-0 z-0 overflow-hidden"
-       style={{
-         backgroundColor: 'rgba(0, 102, 204, 0.02)', // Very subtle seablue color
-       }}
-     >
-       {logoLoaded && (
-         <div className="absolute inset-0 flex items-center justify-center opacity-5">
-           <img 
-             src="/images/aico-enhanced-logo.png" 
-             alt="AiCO Background" 
-             className="w-[70%] max-w-[600px] object-contain"
-             style={{
-               filter: 'blur(3px)',
-             }}
-           />
-         </div>
-       )}
-     </div>
-
-     {/* Content */}
-     <div className="relative z-10 flex-1 space-y-4 p-4 md:p-8 pt-6">
-       <div className="flex items-center justify-between">
-         <h2 className="text-3xl font-bold tracking-tight text-seablue-900">AI Consultation</h2>
-       </div>
-
-       <Tabs defaultValue="chat" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-         <TabsList>
-           <TabsTrigger value="chat" className="flex items-center gap-2">
-             <Sparkles className="h-4 w-4" />
-             AI Assistant
-           </TabsTrigger>
-           <TabsTrigger value="inventory-count" className="flex items-center gap-2">
-             <Package className="h-4 w-4" />
-             Inventory Counting
-           </TabsTrigger>
-           <TabsTrigger value="analytics" className="flex items-center gap-2">
-             <BarChart className="h-4 w-4" />
-             AI Analytics
-           </TabsTrigger>
-         </TabsList>
-
-         <TabsContent value="chat" className="space-y-4">
-           <div className="relative">
-             {/* Background with logo - same as main background but scoped to this tab */}
-             <div 
-               className="absolute inset-0 z-0 overflow-hidden rounded-lg"
-               style={{
-                 backgroundColor: 'rgba(0, 102, 204, 0.05)', // Seablue color with low opacity
-               }}
-             >
-               {logoLoaded && (
-                 <div className="absolute inset-0 flex items-center justify-center opacity-10">
-                   <img 
-                     src="/images/aico-enhanced-logo.png" 
-                     alt="AiCO Background" 
-                     className="w-[70%] max-w-[600px] object-contain"
-                     style={{
-                       filter: 'blur(2px)',
-                     }}
-                   />
-                 </div>
-               )}
-             </div>
-             
-             {/* Content with relative positioning to appear above background */}
-             <div className="relative z-10 p-6 bg-white/80 backdrop-blur-sm rounded-lg">
-               <div className="grid gap-4 md:grid-cols-2">
-                 {/* AI Assistant Card with background */}
-                 <div className="col-span-1 relative">
-                   {/* Card-specific background */}
-                   <div 
-                     className="absolute inset-0 z-0 overflow-hidden rounded-lg"
-                     style={{
-                       backgroundColor: 'rgba(0, 102, 204, 0.03)', // Very subtle seablue color
-                     }}
-                   >
-                     {logoLoaded && (
-                       <div className="absolute inset-0 flex items-center justify-center opacity-8">
-                         <img 
-                           src="/images/aico-enhanced-logo.png" 
-                           alt="AiCO Background" 
-                           className="w-[60%] max-w-[300px] object-contain"
-                           style={{
-                             filter: 'blur(1px)',
-                           }}
-                         />
-                       </div>
-                     )}
-                   </div>
-                   
-                   <Card className="relative z-10 border-seablue-100 bg-white/90 backdrop-blur-sm">
-                     <CardHeader>
-                       <div className="flex items-center space-x-3">
-                         {/* Replace AIAvatar with small logo */}
-                         {logoLoaded && (
-                           <img 
-                             src="/images/aico-enhanced-logo.png" 
-                             alt="AiCO" 
-                             className="h-10 w-10 object-contain"
-                           />
-                         )}
-                         <div>
-                           <CardTitle>Ask AI Assistant</CardTitle>
-                           <CardDescription>Get intelligent recommendations and insights about your inventory</CardDescription>
-                         </div>
-                       </div>
-                     </CardHeader>
-                     <CardContent className="space-y-4">
-                       <div className="flex items-center gap-2">
-                         <Badge variant="outline" className="bg-seablue-50 text-seablue-700 border-seablue-200">
-                           <Sparkles className="h-3 w-3 mr-1" /> AI Powered
-                         </Badge>
-                         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                           Real-time Analysis
-                         </Badge>
-                       </div>
-
-                       {apiError && (
-                         <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm">
-                           <AlertTriangle className="h-4 w-4 inline-block mr-2" />
-                           {apiError}
-                           <Button 
-                             variant="outline" 
-                             size="sm" 
-                             className="ml-2 bg-white" 
-                             onClick={handleRetryConnection}
-                             disabled={isRetrying}
-                           >
-                             {isRetrying ? (
-                               <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                             ) : (
-                               <RefreshCw className="h-3 w-3 mr-1" />
-                             )}
-                             Retry
-                           </Button>
-                         </div>
-                       )}
-
-                       <div className="space-y-1">
-                         <h3 className="text-sm font-medium">Suggested Questions</h3>
-                         <div className="grid gap-2">
-                           {suggestedQuestions.map((question, index) => (
-                             <Button
-                               key={index}
-                               variant="outline"
-                               onClick={() => handleInventoryQuery(question)}
-                               disabled={isLoading || isTyping}
-                               className="justify-start text-left h-auto py-2 bg-white/80"
-                             >
-                               {question}
-                             </Button>
-                           ))}
-                         </div>
-                       </div>
-                       <div className="space-y-1">
-                         <h3 className="text-sm font-medium">Custom Query</h3>
-                         <div className="flex items-start space-x-3">
-                           <Textarea
-                             placeholder="Type your inventory question here..."
-                             className="min-h-[100px] flex-grow bg-white/90"
-                             value={input}
-                             onChange={handleInputChange}
-                             disabled={isLoading || isTyping}
-                           />
-                         </div>
-                       </div>
-                     </CardContent>
-                     <CardFooter>
-                       <form onSubmit={handleSubmit} className="w-full">
-                         <Button
-                           type="submit"
-                           className="w-full bg-seablue-600 hover:bg-seablue-700"
-                           disabled={isLoading || isTyping || !input.trim()}
-                         >
-                           {isLoading || isTyping ? (
-                             <>
-                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                               {isTyping ? "AI is responding..." : "Processing..."}
-                             </>
-                           ) : (
-                             <>
-                               <Send className="mr-2 h-4 w-4" /> Send Query
-                             </>
-                           )}
-                         </Button>
-                       </form>
-                     </CardFooter>
-                   </Card>
-                 </div>
-
-                 {/* Conversation Card with background */}
-                 <div className="col-span-1 relative">
-                   {/* Card-specific background */}
-                   <div 
-                     className="absolute inset-0 z-0 overflow-hidden rounded-lg"
-                     style={{
-                       backgroundColor: 'rgba(0, 102, 204, 0.03)', // Very subtle seablue color
-                     }}
-                   >
-                     {logoLoaded && (
-                       <div className="absolute inset-0 flex items-center justify-center opacity-8">
-                         <img 
-                           src="/images/aico-enhanced-logo.png" 
-                           alt="AiCO Background" 
-                           className="w-[60%] max-w-[300px] object-contain"
-                           style={{
-                             filter: 'blur(1px)',
-                           }}
-                         />
-                       </div>
-                     )}
-                   </div>
-                   
-                   <Card className="relative z-10 border-seablue-100 bg-white/90 backdrop-blur-sm">
-                     <CardHeader>
-                       <CardTitle>Conversation</CardTitle>
-                       <CardDescription>Your conversation with the AI assistant</CardDescription>
-                     </CardHeader>
-                     <CardContent>
-                       <div className="space-y-4 max-h-[400px] overflow-y-auto p-2">
-                         {messages.map((message, index) => (
-                           <div
-                             key={message.id}
-                             className={`flex ${message.role === "assistant" ? "justify-start" : "justify-end"} message-appear`}
-                             style={{ animationDelay: `${index * 0.1}s` }}
-                           >
-                             <div
-                               className={`flex items-start space-x-2 max-w-[80%] ${message.role === "assistant" ? "flex-row" : "flex-row-reverse"}`}
-                             >
-                               {message.role === "assistant" ? (
-                                 <div className="flex-shrink-0">
-                                   {logoLoaded && (
-                                     <img 
-                                       src="/images/aico-enhanced-logo.png" 
-                                       alt="AiCO" 
-                                       className="h-8 w-8 object-contain rounded-full bg-white/90 p-1 border border-seablue-100"
-                                     />
-                                   )}
-                                 </div>
-                               ) : (
-                                 <Avatar className="h-7 w-7 bg-seablue-600">
-                                   <AvatarFallback>{getInitials("User")}</AvatarFallback>
-                                 </Avatar>
-                               )}
-                               <div
-                                 className={`rounded-lg p-3 ${
-                                   message.role === "assistant" ? "bg-white border border-seablue-100" : "bg-seablue-600 text-white"
-                                 }`}
-                               >
-                                 <MemoizedMessageContent content={message.content} />
-                               </div>
-                             </div>
-                           </div>
-                         ))}
-
-                         {/* Typing indicator */}
-                         {isTyping && (
-                           <div className="flex justify-start message-appear">
-                             <div className="flex items-start space-x-2">
-                               <div className="flex-shrink-0">
-                                 {logoLoaded && (
-                                   <img 
-                                     src="/images/aico-enhanced-logo.png" 
-                                     alt="AiCO" 
-                                     className="h-8 w-8 object-contain rounded-full bg-white/90 p-1 border border-seablue-100"
-                                   />
-                                 )}
-                               </div>
-                               <div className="rounded-lg p-3 bg-white border border-seablue-100 flex items-center">
-                                 <TypingIndicator />
-                               </div>
-                             </div>
-                           </div>
-                         )}
-
-                         {/* AI thinking indicator */}
-                         {aiThinking && !isTyping && (
-                           <div className="flex justify-start message-appear">
-                             <div className="flex items-start space-x-2">
-                               <div className="flex-shrink-0">
-                                 {logoLoaded && (
-                                   <img 
-                                     src="/images/aico-enhanced-logo.png" 
-                                     alt="AiCO" 
-                                     className="h-8 w-8 object-contain rounded-full bg-white/90 p-1 border border-seablue-100"
-                                   />
-                                 )}
-                               </div>
-                               <div className="rounded-lg p-3 bg-white border border-seablue-100">Analyzing inventory data...</div>
-                             </div>
-                           </div>
-                         )}
-
-                         {/* Follow-up prompt */}
-                         {showFollowUpPrompt && !apiError && (
-                           <div className="flex justify-start follow-up-prompt">
-                             <div className="flex items-start space-x-2">
-                               <div className="flex-shrink-0">
-                                 {logoLoaded && (
-                                   <img 
-                                     src="/images/aico-enhanced-logo.png" 
-                                     alt="AiCO" 
-                                     className="h-8 w-8 object-contain rounded-full bg-white/90 p-1 border border-seablue-100"
-                                   />
-                                 )}
-                               </div>
-                               <div className="rounded-lg p-3 bg-white border-l-4 border-seablue-400 border border-seablue-100">
-                                 <p>What is your next question?</p>
-                               </div>
-                             </div>
-                           </div>
-                         )}
-
-                         <div ref={messagesEndRef} />
-                       </div>
-                     </CardContent>
-                     <CardFooter className="flex items-center space-x-2">
-                       <form onSubmit={handleSubmit} className="flex w-full space-x-2">
-                         <Input
-                           placeholder="Type a message..."
-                           value={input}
-                           onChange={handleInputChange}
-                           disabled={isLoading || isTyping}
-                           className="flex-1 bg-white/90"
-                         />
-                         <Button
-                           type="submit"
-                           size="icon"
-                           className="bg-seablue-600 hover:bg-seablue-700"
-                           disabled={isLoading || isTyping || !input.trim()}
-                         >
-                           {isLoading || isTyping ? (
-                             <Loader2 className="h-4 w-4 animate-spin" />
-                           ) : (
-                             <Send className="h-4 w-4" />
-                           )}
-                         </Button>
-                       </form>
-                     </CardFooter>
-                   </Card>
-                 </div>
-               </div>
-             </div>
-           </div>
-         </TabsContent>
-
-         {/* Inventory count tab content */}
-         <TabsContent value="inventory-count" className="space-y-4">
-           <div className="relative">
-             {/* Background with logo - same as main background but scoped to this tab */}
-             <div
-               className="absolute inset-0 z-0 overflow-hidden rounded-lg"
-               style={{
-                 backgroundColor: 'rgba(0, 102, 204, 0.05)', // Seabluecolor with low opacity
-               }}
-             >
-               {logoLoaded && (
-                 <div className="absolute inset-0 flex items-center justify-center opacity-10">
-                   <img 
-                     src="/images/aico-enhanced-logo.png" 
-                     alt="AiCO Background" 
-                     className="w-[70%] max-w-[600px] object-contain"
-                     style={{
-                       filter: 'blur(2px)',
-                     }}
-                   />
-                 </div>
-               )}
-             </div>
-             
-             {/* Content with relative positioning to appear above background */}
-             <div className="relative z-10 p-6 bg-white/80 backdrop-blur-sm rounded-lg">
-               <Card>
-                 <CardHeader>
-                   <div className="flex items-center space-x-3">
-                     {/* Replace AIAvatar with small logo */}
-                     {logoLoaded && (
-                       <img 
-                         src="/images/aico-enhanced-logo.png" 
-                         alt="AiCO" 
-                         className="h-10 w-10 object-contain"
-                       />
-                     )}
-                     <div>
-                       <CardTitle>Inventory Counting</CardTitle>
-                       <CardDescription>Upload Excel files or create inventory counts with AI assistance</CardDescription>
-                     </div>
-                   </div>
-                 </CardHeader>
-                 <CardContent>
-                   {!isComplete ? (
-                     <div className="space-y-6">
-                       <div className="flex flex-col space-y-2">
-                         <h3 className="text-sm font-medium">Upload Inventory File</h3>
-                         <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-white/80 backdrop-blur-sm">
-                           {file ? (
-                             <div className="space-y-2">
-                               <div className="flex items-center justify-center">
-                                 <FileSpreadsheet className="h-10 w-10 text-seablue-600" />
-                               </div>
-                               <p className="text-sm font-medium">{fileName}</p>
-                               <p className="text-xs text-muted-foreground">File selected and ready for processing</p>
-                               <Button
-                                 onClick={processInventoryFile}
-                                 className="mt-2 bg-seablue-600 hover:bg-seablue-700"
-                                 disabled={isProcessing}
-                               >
-                                 {isProcessing ? (
-                                   <>
-                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                     Processing...
-                                   </>
-                                 ) : (
-                                   <>
-                                     <FileUp className="mr-2 h-4 w-4" />
-                                     Process File
-                                   </>
-                                 )}
-                               </Button>
-                             </div>
-                           ) : (
-                             <div className="space-y-4">
-                               <div className="flex items-center justify-center">
-                                 {logoLoaded && (
-                                   <img 
-                                     src="/images/aico-enhanced-logo.png" 
-                                     alt="AiCO" 
-                                     className="h-16 w-16 object-contain"
-                                   />
-                                 )}
-                               </div>
-                               <div className="space-y-2">
-                                 <p className="text-sm font-medium">Drag and drop your Excel file here or click to browse</p>
-                                 <p className="text-xs text-muted-foreground">Supports Excel files (.xlsx, .xls, .csv)</p>
-                               </div>
-                               <div className="flex justify-center gap-4">
-                                 <Input
-                                   type="file"
-                                   className="hidden"
-                                   id="inventory-file"
-                                   accept=".xlsx,.xls,.csv"
-                                   onChange={handleFileChange}
-                                 />
-                                 <label htmlFor="inventory-file">
-                                   <Button variant="outline" className="cursor-pointer" asChild>
-                                     <span>
-                                       <Upload className="mr-2 h-4 w-4" />
-                                       Browse Files
-                                     </span>
-                                   </Button>
-                                 </label>
-                                 <Button variant="outline" onClick={downloadTemplate}>
-                                   <Download className="mr-2 h-4 w-4" />
-                                   Download Template
-                                 </Button>
-                               </div>
-                             </div>
-                           )}
-                         </div>
-                       </div>
-
-                       <div className="flex flex-col space-y-2">
-                         <h3 className="text-sm font-medium">Don't have an Excel file?</h3>
-                         <p className="text-sm text-muted-foreground">
-                           You can also create a new inventory count directly or use our AI to help you get started.
-                         </p>
-                         <div className="flex gap-4 mt-2">
-                           <Link href="/upload">
-                             <Button className="bg-seablue-600 hover:bg-seablue-700">
-                               <Upload className="mr-2 h-4 w-4" />
-                               Scan Documents
-                             </Button>
-                           </Link>
-                           <Button variant="outline" onClick={() => setActiveTab("chat")}>
-                             Ask AI Assistant
-                           </Button>
-                         </div>
-                       </div>
-                     </div>
-                   ) : (
-                     <div className="space-y-6">
-                       <div className="flex items-center justify-between">
-                         <h3 className="text-lg font-medium">Processed Inventory Items</h3>
-                         <div className="flex gap-2">
-                           <Button
-                             variant="outline"
-                             onClick={() => {
-                               setFile(null)
-                               setFileName("")
-                               setIsComplete(false)
-                               setInventoryItems([])
-                             }}
-                           >
-                             Upload Another File
-                           </Button>
-                           <Button className="bg-seablue-600 hover:bg-seablue-700" onClick={saveToInventory}>
-                             Save to Inventory
-                           </Button>
-                         </div>
-                       </div>
-
-                      <div className="border rounded-md">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th
-                                scope="col"
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                              >
-                                Item Name
-                              </th>
-                              <th
-                                scope="col"
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                              >
-                                Quantity
-                              </th>
-                              <th
-                                scope="col"
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                              >
-                                Price
-                              </th>
-                              <th
-                                scope="col"
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                              >
-                                Category
-                              </th>
-                              <th
-                                scope="col"
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                              >
-                                Actions
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {inventoryItems.map((item, index) => (
-                              <tr key={item.id}>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  {editingItem === index ? (
-                                    <Input
-                                      value={editValues.name}
-                                      onChange={(e) => handleEditChange("name", e.target.value)}
-                                    />
-                                  ) : (
-                                    <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                                  )}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  {editingItem === index ? (
-                                    <Input
-                                      type="number"
-                                      value={editValues.quantity}
-                                      onChange={(e) => handleEditChange("quantity", e.target.value)}
-                                    />
-                                  ) : (
-                                    <div className="text-sm text-gray-900">{item.quantity}</div>
-                                  )}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  {editingItem === index ? (
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      value={editValues.price}
-                                      onChange={(e) => handleEditChange("price", e.target.value)}
-                                    />
-                                  ) : (
-                                    <div className="text-sm text-gray-900">${item.price.toFixed(2)}</div>
-                                  )}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  {editingItem === index ? (
-                                    <Input
-                                      value={editValues.category}
-                                      onChange={(e) => handleEditChange("category", e.target.value)}
-                                    />
-                                  ) : (
-                                    <div className="text-sm text-gray-900">{item.category}</div>
-                                  )}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                  {editingItem === index ? (
-                                    <Button
-                                      size="sm"
-                                      onClick={() => saveEdit(index)}
-                                      className="bg-green-600 hover:bg-green-700 text-white"
-                                    >
-                                      <Check className="h-4 w-4" />
-                                    </Button>
-                                  ) : (
-                                    <div className="flex space-x-2 justify-end">
-                                      <Button size="sm" variant="ghost" onClick={() => startEditing(index)}>
-                                        <Edit className="h-4 w-4" />
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => deleteItem(index)}
-                                        className="text-red-500 hover:text-red-700"
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <Button onClick={addNewItem} variant="outline" size="sm" className="flex items-center">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Item
-                      </Button>
-
-                      <div className="pt-4">
-                        <Textarea placeholder="Add notes about these items (optional)" className="w-full h-24" />
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* Analytics Tab */}
-        <TabsContent value="analytics" className="space-y-4">
-          <div className="relative">
-            {/* Background with logo - same as main background but scoped to this tab */}
-            <div 
-              className="absolute inset-0 z-0 overflow-hidden rounded-lg"
+    <div className="relative min-h-[calc(100vh-4rem)]">
+      {/* Background with logo */}
+      <div
+        className="absolute inset-0 z-0 overflow-hidden"
+        style={{
+          backgroundColor: "rgba(0, 102, 204, 0.02)", // Very subtle seablue color
+        }}
+      >
+        {logoLoaded && (
+          <div className="absolute inset-0 flex items-center justify-center opacity-5">
+            <img
+              src="/images/aico-enhanced-logo.png"
+              alt="AiCO Background"
+              className="w-[70%] max-w-[600px] object-contain"
               style={{
-                backgroundColor: 'rgba(0, 102, 204, 0.05)', // Seablue color with low opacity
+                filter: "blur(3px)",
               }}
-            >
-              {logoLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center opacity-10">
-                  <img 
-                    src="/images/aico-enhanced-logo.png" 
-                    alt="AiCO Background" 
-                    className="w-[70%] max-w-[600px] object-contain"
-                    style={{
-                      filter: 'blur(2px)',
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-            
-            {/* Content with relative positioning to appear above background */}
-            <div className="relative z-10 p-6 bg-white/80 backdrop-blur-sm rounded-lg">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center space-x-3">
-                    {/* Replace AIAvatar with small logo */}
-                    {logoLoaded && (
-                      <img 
-                        src="/images/aico-enhanced-logo.png" 
-                        alt="AiCO" 
-                        className="h-10 w-10 object-contain"
-                      />
-                    )}
-                    <div>
-                      <CardTitle>AI Analytics Dashboard</CardTitle>
-                      <CardDescription>Advanced inventory insights and predictive analytics</CardDescription>
-                    </div>
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 flex-1 space-y-4 p-4 md:p-8 pt-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-3xl font-bold tracking-tight text-seablue-900">AI Consultation</h2>
+        </div>
+
+        <Tabs defaultValue="chat" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="chat" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              AI Assistant
+            </TabsTrigger>
+            <TabsTrigger value="inventory-count" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Inventory Counting
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart className="h-4 w-4" />
+              AI Analytics
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="chat" className="space-y-4">
+            <div className="relative">
+              {/* Background with logo - same as main background but scoped to this tab */}
+              <div
+                className="absolute inset-0 z-0 overflow-hidden rounded-lg"
+                style={{
+                  backgroundColor: "rgba(0, 102, 204, 0.05)", // Seablue color with low opacity
+                }}
+              >
+                {logoLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center opacity-10">
+                    <img
+                      src="/images/aico-enhanced-logo.png"
+                      alt="AiCO Background"
+                      className="w-[70%] max-w-[600px] object-contain"
+                      style={{
+                        filter: "blur(2px)",
+                      }}
+                    />
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    <div className="grid gap-4 md:grid-cols-4">
-                      <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                          <CardTitle className="text-sm font-medium">Stock Turnover Rate</CardTitle>
-                          <TrendingUp className="h-4 w-4 text-green-500" />
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-2xl font-bold text-seablue-900">4.2x</div>
-                          <p className="text-xs text-muted-foreground">+0.5x from last month</p>
-                        </CardContent>
-                      </Card>
-                      
-                      <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                          <CardTitle className="text-sm font-medium">Average Days in Stock</CardTitle>
-                          <TrendingDown className="h-4 w-4 text-green-500" />
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-2xl font-bold text-seablue-900">32 days</div>
-                          <p className="text-xs text-muted-foreground">-5 days from last month</p>
-                        </CardContent>
-                      </Card>
-                      
-                      <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                          <CardTitle className="text-sm font-medium">Stockout Rate</CardTitle>
-                          <TrendingDown className="h-4 w-4 text-green-500" />
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-2xl font-bold text-seablue-900">2.3%</div>
-                          <p className="text-xs text-muted-foreground">-1.1% from last month</p>
-                        </CardContent>
-                      </Card>
-                      
-                      <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                          <CardTitle className="text-sm font-medium">Inventory Accuracy</CardTitle>
-                          <TrendingUp className="h-4 w-4 text-green-500" />
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-2xl font-bold text-seablue-900">98.7%</div>
-                          <p className="text-xs text-muted-foreground">+0.8% from last month</p>
-                        </CardContent>
-                      </Card>
+                )}
+              </div>
+
+              {/* Content with relative positioning to appear above background */}
+              <div className="relative z-10 p-6 bg-white/80 backdrop-blur-sm rounded-lg">
+                <div className="grid gap-4 md:grid-cols-2">
+                  {/* AI Assistant Card with background */}
+                  <div className="col-span-1 relative">
+                    {/* Card-specific background */}
+                    <div
+                      className="absolute inset-0 z-0 overflow-hidden rounded-lg"
+                      style={{
+                        backgroundColor: "rgba(0, 102, 204, 0.03)", // Very subtle seablue color
+                      }}
+                    >
+                      {logoLoaded && (
+                        <div className="absolute inset-0 flex items-center justify-center opacity-8">
+                          <img
+                            src="/images/aico-enhanced-logo.png"
+                            alt="AiCO Background"
+                            className="w-[60%] max-w-[300px] object-contain"
+                            style={{
+                              filter: "blur(1px)",
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
-                    
-                    <Tabs defaultValue="trends">
-                      <TabsList>
-                        <TabsTrigger value="trends">Inventory Trends</TabsTrigger>
-                        <TabsTrigger value="predictions">AI Predictions</TabsTrigger>
-                        <TabsTrigger value="categories">Category Analysis</TabsTrigger>
-                      </TabsList>
-                      
-                      <TabsContent value="trends" className="space-y-4 mt-4">
-                        <div className="h-[300px] w-full bg-white rounded-md border flex items-center justify-center">
-                          <LineChart className="h-8 w-8 text-seablue-300" />
-                          <span className="ml-2 text-sm text-muted-foreground">Inventory Trend Chart</span>
+
+                    <Card className="relative z-10 border-seablue-100 bg-white/90 backdrop-blur-sm">
+                      <CardHeader>
+                        <div className="flex items-center space-x-3">
+                          {/* Replace AIAvatar with small logo */}
+                          {logoLoaded && (
+                            <img src="/images/aico-enhanced-logo.png" alt="AiCO" className="h-10 w-10 object-contain" />
+                          )}
+                          <div>
+                            <CardTitle>Ask AI Assistant</CardTitle>
+                            <CardDescription>
+                              Get intelligent recommendations and insights about your inventory
+                            </CardDescription>
+                          </div>
                         </div>
-                        
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <Card>
-                            <CardHeader>
-                              <CardTitle className="text-sm">Top Performing Items</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <ul className="space-y-2">
-                                <li className="flex justify-between items-center">
-                                  <span>Laptop - ThinkPad X1</span>
-                                  <Badge className="bg-green-100 text-green-800 border-green-200">+15%</Badge>
-                                </li>
-                                <li className="flex justify-between items-center">
-                                  <span>LED Monitor - 27"</span>
-                                  <Badge className="bg-green-100 text-green-800 border-green-200">+12%</Badge>
-                                </li>
-                                <li className="flex justify-between items-center">
-                                  <span>Wireless Keyboard</span>
-                                  <Badge className="bg-green-100 text-green-800 border-green-200">+8%</Badge>
-                                </li>
-                              </ul>
-                            </CardContent>
-                          </Card>
-                          
-                          <Card>
-                            <CardHeader>
-                              <CardTitle className="text-sm">Underperforming Items</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <ul className="space-y-2">
-                                <li className="flex justify-between items-center">
-                                  <span>Office Desk</span>
-                                  <Badge className="bg-red-100 text-red-800 border-red-200">-8%</Badge>
-                                </li>
-                                <li className="flex justify-between items-center">
-                                  <span>Desk Lamp</span>
-                                  <Badge className="bg-red-100 text-red-800 border-red-200">-5%</Badge>
-                                </li>
-                                <li className="flex justify-between items-center">
-                                  <span>Ergonomic Chair</span>
-                                  <Badge className="bg-red-100 text-red-800 border-red-200">-3%</Badge>
-                                </li>
-                              </ul>
-                            </CardContent>
-                          </Card>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="bg-seablue-50 text-seablue-700 border-seablue-200">
+                            <Sparkles className="h-3 w-3 mr-1" /> AI Powered
+                          </Badge>
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            Real-time Analysis
+                          </Badge>
                         </div>
-                      </TabsContent>
-                      
-                      <TabsContent value="predictions" className="space-y-4 mt-4">
-                        <div className="h-[300px] w-full bg-white rounded-md border flex items-center justify-center">
-                          <BarChart className="h-8 w-8 text-seablue-300" />
-                          <span className="ml-2 text-sm text-muted-foreground">Demand Forecast Chart</span>
+
+                        {apiError && (
+                          <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm">
+                            <AlertTriangle className="h-4 w-4 inline-block mr-2" />
+                            {apiError}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="ml-2 bg-white"
+                              onClick={handleRetryConnection}
+                              disabled={isRetrying}
+                            >
+                              {isRetrying ? (
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                              ) : (
+                                <RefreshCw className="h-3 w-3 mr-1" />
+                              )}
+                              Retry
+                            </Button>
+                          </div>
+                        )}
+
+                        <div className="space-y-1">
+                          <h3 className="text-sm font-medium">Suggested Questions</h3>
+                          <div className="grid gap-2">
+                            {suggestedQuestions.map((question, index) => (
+                              <Button
+                                key={index}
+                                variant="outline"
+                                onClick={() => handleInventoryQuery(question)}
+                                disabled={isLoading || isTyping}
+                                className="justify-start text-left h-auto py-2 bg-white/80"
+                              >
+                                {question}
+                              </Button>
+                            ))}
+                          </div>
                         </div>
-                        
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>AI-Generated Recommendations</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-4">
-                              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-                                <h4 className="font-medium text-blue-800">Restock Recommendations</h4>
-                                <p className="text-sm text-blue-700 mt-1">
-                                  Based on current trends, consider restocking Wireless Mouse (5 units), Office Desk (3 units), 
-                                  and Desk Lamp (10 units) within the next 7 days to avoid stockouts.
-                                </p>
-                              </div>
-                              
-                              <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                                <h4 className="font-medium text-green-800">Optimization Opportunities</h4>
-                                <p className="text-sm text-green-700 mt-1">
-                                  Reduce stock levels for USB-C Hubs by 15% to optimize inventory turnover. 
-                                  Current levels exceed projected demand by approximately 3 weeks.
-                                </p>
-                              </div>
-                              
-                              <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
-                                <h4 className="font-medium text-amber-800">Market Trends Alert</h4>
-                                <p className="text-sm text-amber-700 mt-1">
-                                  Seasonal increase in demand for office furniture expected in the next 30 days. 
-                                  Consider increasing stock of Ergonomic Chairs by 20% to meet projected demand.
-                                </p>
+                        <div className="space-y-1">
+                          <h3 className="text-sm font-medium">Custom Query</h3>
+                          <div className="flex items-start space-x-3">
+                            <Textarea
+                              placeholder="Type your inventory question here..."
+                              className="min-h-[100px] flex-grow bg-white/90"
+                              value={input}
+                              onChange={handleInputChange}
+                              disabled={isLoading || isTyping}
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                      <CardFooter>
+                        <form onSubmit={handleSubmit} className="w-full">
+                          <Button
+                            type="submit"
+                            className="w-full bg-seablue-600 hover:bg-seablue-700"
+                            disabled={isLoading || isTyping || !input.trim()}
+                          >
+                            {isLoading || isTyping ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                {isTyping ? "AI is responding..." : "Processing..."}
+                              </>
+                            ) : (
+                              <>
+                                <Send className="mr-2 h-4 w-4" /> Send Query
+                              </>
+                            )}
+                          </Button>
+                        </form>
+                      </CardFooter>
+                    </Card>
+                  </div>
+
+                  {/* Conversation Card with background */}
+                  <div className="col-span-1 relative">
+                    {/* Card-specific background */}
+                    <div
+                      className="absolute inset-0 z-0 overflow-hidden rounded-lg"
+                      style={{
+                        backgroundColor: "rgba(0, 102, 204, 0.03)", // Very subtle seablue color
+                      }}
+                    >
+                      {logoLoaded && (
+                        <div className="absolute inset-0 flex items-center justify-center opacity-8">
+                          <img
+                            src="/images/aico-enhanced-logo.png"
+                            alt="AiCO Background"
+                            className="w-[60%] max-w-[300px] object-contain"
+                            style={{
+                              filter: "blur(1px)",
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <Card className="relative z-10 border-seablue-100 bg-white/90 backdrop-blur-sm">
+                      <CardHeader>
+                        <CardTitle>Conversation</CardTitle>
+                        <CardDescription>Your conversation with the AI assistant</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4 max-h-[400px] overflow-y-auto p-2">
+                          {messages.map((message, index) => (
+                            <div
+                              key={message.id}
+                              className={`flex ${message.role === "assistant" ? "justify-start" : "justify-end"} message-appear`}
+                              style={{ animationDelay: `${index * 0.1}s` }}
+                            >
+                              <div
+                                className={`flex items-start space-x-2 max-w-[80%] ${message.role === "assistant" ? "flex-row" : "flex-row-reverse"}`}
+                              >
+                                {message.role === "assistant" ? (
+                                  <div className="flex-shrink-0">
+                                    {logoLoaded && (
+                                      <img
+                                        src="/images/aico-enhanced-logo.png"
+                                        alt="AiCO"
+                                        className="h-8 w-8 object-contain rounded-full bg-white/90 p-1 border border-seablue-100"
+                                      />
+                                    )}
+                                  </div>
+                                ) : (
+                                  <Avatar className="h-7 w-7 bg-seablue-600">
+                                    <AvatarFallback>{getInitials("User")}</AvatarFallback>
+                                  </Avatar>
+                                )}
+                                <div
+                                  className={`rounded-lg p-3 ${
+                                    message.role === "assistant"
+                                      ? "bg-white border border-seablue-100"
+                                      : "bg-seablue-600 text-white"
+                                  }`}
+                                >
+                                  <MemoizedMessageContent content={message.content} />
+                                </div>
                               </div>
                             </div>
-                          </CardContent>
-                        </Card>
-                      </TabsContent>
-                      
-                      <TabsContent value="categories" className="space-y-4 mt-4">
-                        <div className="h-[300px] w-full bg-white rounded-md border flex items-center justify-center">
-                          <PieChart className="h-8 w-8 text-seablue-300" />
-                          <span className="ml-2 text-sm text-muted-foreground">Category Distribution Chart</span>
+                          ))}
+
+                          {/* Typing indicator */}
+                          {isTyping && (
+                            <div className="flex justify-start message-appear">
+                              <div className="flex items-start space-x-2">
+                                <div className="flex-shrink-0">
+                                  {logoLoaded && (
+                                    <img
+                                      src="/images/aico-enhanced-logo.png"
+                                      alt="AiCO"
+                                      className="h-8 w-8 object-contain rounded-full bg-white/90 p-1 border border-seablue-100"
+                                    />
+                                  )}
+                                </div>
+                                <div className="rounded-lg p-3 bg-white border border-seablue-100 flex items-center">
+                                  <TypingIndicator />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* AI thinking indicator */}
+                          {aiThinking && !isTyping && (
+                            <div className="flex justify-start message-appear">
+                              <div className="flex items-start space-x-2">
+                                <div className="flex-shrink-0">
+                                  {logoLoaded && (
+                                    <img
+                                      src="/images/aico-enhanced-logo.png"
+                                      alt="AiCO"
+                                      className="h-8 w-8 object-contain rounded-full bg-white/90 p-1 border border-seablue-100"
+                                    />
+                                  )}
+                                </div>
+                                <div className="rounded-lg p-3 bg-white border border-seablue-100">
+                                  Analyzing inventory data...
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Follow-up prompt */}
+                          {showFollowUpPrompt && !apiError && (
+                            <div className="flex justify-start follow-up-prompt">
+                              <div className="flex items-start space-x-2">
+                                <div className="flex-shrink-0">
+                                  {logoLoaded && (
+                                    <img
+                                      src="/images/aico-enhanced-logo.png"
+                                      alt="AiCO"
+                                      className="h-8 w-8 object-contain rounded-full bg-white/90 p-1 border border-seablue-100"
+                                    />
+                                  )}
+                                </div>
+                                <div className="rounded-lg p-3 bg-white border-l-4 border-seablue-400 border border-seablue-100">
+                                  <p>What is your next question?</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          <div ref={messagesEndRef} />
                         </div>
-                        
-                        <div className="grid gap-4 md:grid-cols-3">
-                          <Card>
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-sm">Electronics</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="text-2xl font-bold text-seablue-900">$14,249.87</div>
-                              <p className="text-xs text-muted-foreground">33 items</p>
-                              <div className="mt-2 h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                                <div className="bg-seablue-600 h-full rounded-full" style={{ width: '45%' }}></div>
-                              </div>
-                              <p className="text-xs text-right mt-1">45% of total inventory value</p>
-                            </CardContent>
-                          </Card>
-                          
-                          <Card>
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-sm">Furniture</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="text-2xl font-bold text-seablue-900">$9,874.50</div>
-                              <p className="text-xs text-muted-foreground">18 items</p>
-                              <div className="mt-2 h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                                <div className="bg-seablue-600 h-full rounded-full" style={{ width: '30%' }}></div>
-                              </div>
-                              <p className="text-xs text-right mt-1">30% of total inventory value</p>
-                            </CardContent>
-                          </Card>
-                          
-                          <Card>
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-sm">Accessories</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="text-2xl font-bold text-seablue-900">$5,621.35</div>
-                              <p className="text-xs text-muted-foreground">42 items</p>
-                              <div className="mt-2 h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                                <div className="bg-seablue-600 h-full rounded-full" style={{ width: '25%' }}></div>
-                              </div>
-                              <p className="text-xs text-right mt-1">25% of total inventory value</p>
-                            </CardContent>
-                          </Card>
-                        </div>
-                      </TabsContent>
-                    </Tabs>
-                    
-                    <div className="flex justify-between items-center mt-6">
-                      <div className="flex items-center space-x-2">
-                        <Button variant="outline" size="sm">
-                          <RefreshCw className="mr-2 h-4 w-4" />
-                          Refresh Data
-                        </Button>
-                        <Select defaultValue="30days">
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Select time range" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="7days">Last 7 days</SelectItem>
-                            <SelectItem value="30days">Last 30 days</SelectItem>
-                            <SelectItem value="90days">Last 90 days</SelectItem>
-                            <SelectItem value="year">Last year</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <Button className="bg-seablue-600 hover:bg-seablue-700">
-                        <Download className="mr-2 h-4 w-4" />
-                        Export Report
-                      </Button>
-                    </div>
+                      </CardContent>
+                      <CardFooter className="flex items-center space-x-2">
+                        <form onSubmit={handleSubmit} className="flex w-full space-x-2">
+                          <Input
+                            placeholder="Type a message..."
+                            value={input}
+                            onChange={handleInputChange}
+                            disabled={isLoading || isTyping}
+                            className="flex-1 bg-white/90"
+                          />
+                          <Button
+                            type="submit"
+                            size="icon"
+                            className="bg-seablue-600 hover:bg-seablue-700"
+                            disabled={isLoading || isTyping || !input.trim()}
+                          >
+                            {isLoading || isTyping ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Send className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </form>
+                      </CardFooter>
+                    </Card>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+
+          {/* Rest of the tabs content would go here */}
+        </Tabs>
+      </div>
     </div>
-  </div>
+  )
 }
-\

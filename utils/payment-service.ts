@@ -158,7 +158,7 @@ export const processPayment = async (
 
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.paypalEmail || !emailRegex.test(paymentDetails.paypalEmail)) {
+      if (!emailRegex.test(paymentDetails.paypalEmail)) {
         return {
           success: false,
           error: "Invalid PayPal email format",
