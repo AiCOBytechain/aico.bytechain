@@ -8,12 +8,16 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Send, Loader2, AlertTriangle, Sparkles, BarChart, Package, RefreshCw } from "lucide-react"
+import { Send, Loader2, AlertTriangle, Sparkles, BarChart, Package, RefreshCw, Scan, Upload, X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { TypingIndicator } from "@/components/typing-indicator"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { toast } from "@/components/ui/use-toast"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { DocumentCamera } from "@/components/document-camera"
+import { DocumentScanResults } from "@/components/document-scan-results"
+import { scanDocument, type ExtractedItem, type DocumentAnalysis } from "@/utils/document-scanner"
 
 // Sample inventory data for AI to reference
 const SAMPLE_INVENTORY = [
@@ -104,6 +108,14 @@ export default function AIConsultationPage() {
   const [aiThinking, setAiThinking] = useState(false)
   const [showFollowUpPrompt, setShowFollowUpPrompt] = useState(false)
   const [apiError, setApiError] = useState<string | null>(null)
+
+  // Document scanner states
+  const [documentScanActive, setDocumentScanActive] = useState(false)
+  const [scanResults, setScanResults] = useState<DocumentAnalysis | null>(null)
+  const [isScanning, setIsScanning] = useState(false)
+  const [scanError, setScanError] = useState<string | null>(null)
+  const [showScanResults, setShowScanResults] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const router = useRouter()
 
@@ -403,200 +415,214 @@ export default function AIConsultationPage() {
     "How can I optimize my inventory turnover?",
   ]
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Function to handle document scanning
+  const handleDocumentScannerOpen = () => {
+    setDocumentScanActive(true)
+  }
+
+  const handleDocumentCapture = async (imageData: string) => {
     try {
-      if (e.target.files && e.target.files[0]) {
-        const selectedFile = e.target.files[0]
+      setDocumentScanActive(false)
+      setIsScanning(true)
+      setScanError(null)
 
-        // Check file size (max 10MB)
-        if (selectedFile.size > 10 * 1024 * 1024) {
-          toast({
-            title: "File too large",
-            description: "Please select a file smaller than 10MB",
-            variant: "destructive",
-          })
-          return
-        }
+      // Scan the document using our AI scanner
+      const analysis = await scanDocument(imageData)
 
-        setFile(selectedFile)
-        setFileName(selectedFile.name)
-      }
-    } catch (error) {
-      console.error("Error handling file:", error)
+      // Update state with scan results
+      setScanResults(analysis)
+      setShowScanResults(true)
+
+      // Add a message to the chat about the document scan
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          role: "user",
+          content: "I've scanned a document. Can you analyze it for me?",
+        },
+      ])
+
+      // Add AI response about the document scan
+      const aiResponse = `I've analyzed your document and found ${analysis.scanResult.items.length} items. ${analysis.summary}\n\nWould you like me to provide more detailed insights about specific items?`
+
+      // Simulate typing delay
+      setAiThinking(false)
+      setIsTyping(true)
+
+      const typingTimeout = addTimeout(
+        setTimeout(() => {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: (Date.now() + 1).toString(),
+              role: "assistant",
+              content: aiResponse,
+            },
+          ])
+
+          setIsTyping(false)
+
+          // Show follow-up prompt after a delay
+          const followUpTimeout = addTimeout(
+            setTimeout(() => {
+              setShowFollowUpPrompt(true)
+            }, 500),
+          )
+        }, 1500),
+      )
+
       toast({
-        title: "Error",
-        description: "There was an error processing your file. Please try again.",
+        title: "Document Scanned Successfully",
+        description: `${analysis.scanResult.items.length} items detected in the document.`,
+      })
+    } catch (error) {
+      console.error("Error scanning document:", error)
+      setScanError(error instanceof Error ? error.message : "An unknown error occurred")
+
+      toast({
+        title: "Scanning Error",
+        description: "Failed to scan the document. Please try again.",
         variant: "destructive",
       })
+    } finally {
+      setIsScanning(false)
     }
   }
 
-  const processInventoryFile = () => {
-    if (!file) return
-
-    setIsProcessing(true)
-
-    // Simulate processing an Excel file
-    const timeout = setTimeout(() => {
-      try {
-        // Use sample inventory data
-        setInventoryItems(SAMPLE_INVENTORY.slice(0, 5))
-        setIsProcessing(false)
-        setIsComplete(true)
-      } catch (error) {
-        console.error("Error processing file:", error)
-        setIsProcessing(false)
-        toast({
-          title: "Processing Error",
-          description: "There was an error processing your file. Please try again.",
-          variant: "destructive",
-        })
-      }
-    }, 2000)
-
-    timeoutRefs.current.push(timeout)
+  const handleCameraClose = () => {
+    setDocumentScanActive(false)
   }
 
-  const startEditing = (index: number) => {
-    try {
-      const item = inventoryItems[index]
-      if (!item) return
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0]
 
-      setEditingItem(index)
-      setEditValues({
-        name: item.name,
-        quantity: item.quantity.toString(),
-        category: item.category,
-        price: item.price.toString(),
-      })
-    } catch (error) {
-      console.error("Error starting edit:", error)
-      toast({
-        title: "Error",
-        description: "Could not edit this item. Please try again.",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const saveEdit = (index: number) => {
-    try {
-      // Validate inputs
-      const quantity = Number.parseInt(editValues.quantity)
-      const price = Number.parseFloat(editValues.price)
-
-      if (isNaN(quantity) || isNaN(price)) {
+      // Validate file size (max 10MB)
+      if (selectedFile.size > 10 * 1024 * 1024) {
         toast({
-          title: "Invalid Input",
-          description: "Please enter valid numbers for quantity and price",
+          title: "File too large",
+          description: "Please select a file smaller than 10MB",
           variant: "destructive",
         })
         return
       }
 
-      const updatedItems = [...inventoryItems]
-      updatedItems[index] = {
-        ...updatedItems[index],
-        name: editValues.name.trim() || "Unnamed Item",
-        quantity: quantity,
-        category: editValues.category.trim() || "Uncategorized",
-        price: price,
+      try {
+        setIsScanning(true)
+        setScanError(null)
+
+        // Create a file URL
+        const fileUrl = URL.createObjectURL(selectedFile)
+
+        // Scan the document
+        const analysis = await scanDocument(selectedFile)
+
+        // Update state with scan results
+        setScanResults(analysis)
+        setShowScanResults(true)
+
+        // Add a message to the chat about the document upload
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            role: "user",
+            content: `I've uploaded a document called "${selectedFile.name}". Can you analyze it for me?`,
+          },
+        ])
+
+        // Add AI response about the document scan
+        const aiResponse = `I've analyzed your document "${selectedFile.name}" and found ${analysis.scanResult.items.length} items. ${analysis.summary}\n\nWould you like me to provide more detailed insights about specific items?`
+
+        // Simulate typing delay
+        setAiThinking(false)
+        setIsTyping(true)
+
+        const typingTimeout = addTimeout(
+          setTimeout(() => {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: (Date.now() + 1).toString(),
+                role: "assistant",
+                content: aiResponse,
+              },
+            ])
+
+            setIsTyping(false)
+
+            // Show follow-up prompt after a delay
+            const followUpTimeout = addTimeout(
+              setTimeout(() => {
+                setShowFollowUpPrompt(true)
+              }, 500),
+            )
+          }, 1500),
+        )
+
+        toast({
+          title: "Document Analyzed Successfully",
+          description: `${analysis.scanResult.items.length} items detected in the document.`,
+        })
+      } catch (error) {
+        console.error("Error analyzing document:", error)
+        setScanError(error instanceof Error ? error.message : "An unknown error occurred")
+
+        toast({
+          title: "Analysis Error",
+          description: "Failed to analyze the document. Please try again.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsScanning(false)
       }
+    }
+  }
 
-      setInventoryItems(updatedItems)
-      setEditingItem(null)
-    } catch (error) {
-      console.error("Error saving edit:", error)
-      toast({
-        title: "Error",
-        description: "Could not save your changes. Please try again.",
-        variant: "destructive",
+  const openFileUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
+
+  const handleEditExtractedItem = (item: ExtractedItem, index: number) => {
+    // This would open a dialog to edit the item
+    // For simplicity, we'll just log it
+    console.log("Edit item:", item, "at index:", index)
+  }
+
+  const handleDeleteExtractedItem = (index: number) => {
+    // This would delete the item
+    // For simplicity, we'll just log it
+    console.log("Delete item at index:", index)
+
+    // Also update scan results if they exist
+    if (scanResults) {
+      const updatedInsights = [...scanResults.insights]
+      updatedInsights.splice(index, 1)
+
+      setScanResults({
+        ...scanResults,
+        insights: updatedInsights,
+        summary: `Updated: ${updatedInsights.length} items remaining after deletion.`,
       })
     }
   }
 
-  const handleEditChange = (field: string, value: string) => {
-    setEditValues((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
+  const handleAddItemsToInventory = (items: ExtractedItem[]) => {
+    // In a real app, this would add the items to the inventory database
+    toast({
+      title: "Items Added to Inventory",
+      description: `${items.length} items have been added to your inventory.`,
+    })
+
+    // Navigate to inventory page
+    router.push("/inventory")
   }
 
-  const addNewItem = () => {
-    try {
-      const newItem = {
-        id: Date.now(), // Use timestamp for unique ID
-        name: "New Item",
-        quantity: 1,
-        price: 0.0,
-        category: "Other",
-        status: "In Stock",
-      }
-
-      setInventoryItems((prev) => [...prev, newItem])
-      setEditingItem(inventoryItems.length)
-      setEditValues({
-        name: newItem.name,
-        quantity: newItem.quantity.toString(),
-        price: newItem.price.toString(),
-        category: newItem.category,
-      })
-    } catch (error) {
-      console.error("Error adding item:", error)
-      toast({
-        title: "Error",
-        description: "Could not add a new item. Please try again.",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const deleteItem = (index: number) => {
-    try {
-      const updatedItems = [...inventoryItems]
-      updatedItems.splice(index, 1)
-      setInventoryItems(updatedItems)
-    } catch (error) {
-      console.error("Error deleting item:", error)
-      toast({
-        title: "Error",
-        description: "Could not delete this item. Please try again.",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const saveToInventory = () => {
-    try {
-      // In a real app, this would save the processed items to the inventory
-      toast({
-        title: "Success",
-        description: "Items saved to inventory successfully!",
-      })
-      router.push("/inventory")
-    } catch (error) {
-      console.error("Error saving to inventory:", error)
-      toast({
-        title: "Error",
-        description: "Could not save to inventory. Please try again.",
-      })
-    }
-  }
-
-  const downloadTemplate = () => {
-    try {
-      // In a real app, this would generate and download an Excel template
-      toast({
-        title: "Template Downloaded",
-        description: "Template downloaded successfully!",
-      })
-    } catch (error) {
-      console.error("Error downloading template:", error)
-      toast({
-        title: "Error",
-        description: "Could not download template. Please try again.",
-      })
-    }
+  const closeScanResults = () => {
+    setShowScanResults(false)
   }
 
   // Function to get initials for avatar
@@ -794,6 +820,40 @@ export default function AIConsultationPage() {
                             ))}
                           </div>
                         </div>
+
+                        <div className="space-y-1">
+                          <h3 className="text-sm font-medium">Document Analysis</h3>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={handleDocumentScannerOpen}
+                              disabled={isLoading || isTyping}
+                              className="justify-start text-left h-auto py-2 bg-white/80"
+                            >
+                              <Scan className="mr-2 h-4 w-4" />
+                              Scan Document
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              onClick={openFileUpload}
+                              disabled={isLoading || isTyping}
+                              className="justify-start text-left h-auto py-2 bg-white/80"
+                            >
+                              <Upload className="mr-2 h-4 w-4" />
+                              Upload Document
+                            </Button>
+
+                            <input
+                              type="file"
+                              className="hidden"
+                              ref={fileInputRef}
+                              accept=".pdf,.jpg,.jpeg,.png"
+                              onChange={handleFileUpload}
+                            />
+                          </div>
+                        </div>
+
                         <div className="space-y-1">
                           <h3 className="text-sm font-medium">Custom Query</h3>
                           <div className="flex items-start space-x-3">
@@ -993,6 +1053,66 @@ export default function AIConsultationPage() {
           {/* Rest of the tabs content would go here */}
         </Tabs>
       </div>
+
+      {/* Document Scanner Dialog */}
+      <Dialog open={documentScanActive} onOpenChange={(open) => !open && handleCameraClose()}>
+        <DialogContent className="sm:max-w-4xl p-0">
+          <DocumentCamera onCapture={handleDocumentCapture} onCancel={handleCameraClose} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Scan Results Dialog */}
+      <Dialog open={showScanResults} onOpenChange={setShowScanResults}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          {scanResults && (
+            <DocumentScanResults
+              analysis={scanResults}
+              onAddToInventory={handleAddItemsToInventory}
+              onEditItem={handleEditExtractedItem}
+              onDeleteItem={handleDeleteExtractedItem}
+              isEditing={true}
+            />
+          )}
+          <div className="flex justify-end mt-4">
+            <Button variant="outline" onClick={closeScanResults}>
+              <X className="mr-2 h-4 w-4" />
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Error Alert */}
+      {scanError && (
+        <div className="fixed bottom-4 right-4 bg-red-100 border border-red-200 text-red-800 px-4 py-3 rounded-lg shadow-lg flex items-start max-w-md">
+          <AlertTriangle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="font-medium">Document Scanning Error</h3>
+            <p className="text-sm">{scanError}</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-2 text-red-800 hover:bg-red-200"
+            onClick={() => setScanError(null)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
+      {/* Loading Overlay */}
+      {isScanning && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center">
+            <Loader2 className="h-8 w-8 animate-spin text-seablue-600 mb-4" />
+            <h3 className="text-lg font-medium">Analyzing Document</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Our AI is extracting and processing information from your document...
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -7,12 +7,31 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Camera, FileText, Upload, Check, Loader2, Edit, Download, Save, Plus, Trash2, RefreshCw } from "lucide-react"
+import {
+  Camera,
+  FileText,
+  Upload,
+  Check,
+  Loader2,
+  Edit,
+  Download,
+  Save,
+  Plus,
+  Trash2,
+  RefreshCw,
+  Scan,
+  AlertTriangle,
+  X,
+} from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { toast } from "@/components/ui/use-toast"
+import { DocumentCamera } from "@/components/document-camera"
+import { DocumentScanResults } from "@/components/document-scan-results"
+import { scanDocument, type ExtractedItem, type DocumentAnalysis } from "@/utils/document-scanner"
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null)
@@ -40,6 +59,13 @@ export default function UploadPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
+  // AI document scanner states
+  const [documentScanActive, setDocumentScanActive] = useState(false)
+  const [scanResults, setScanResults] = useState<DocumentAnalysis | null>(null)
+  const [isScanning, setIsScanning] = useState(false)
+  const [scanError, setScanError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   // Get available cameras
   const getAvailableCameras = async () => {
     if (typeof navigator === "undefined" || !navigator.mediaDevices) {
@@ -56,6 +82,11 @@ export default function UploadPage() {
       }
     } catch (error) {
       console.error("Error getting cameras:", error)
+      toast({
+        title: "Camera Error",
+        description: "Could not access your camera. Please check permissions.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -86,6 +117,11 @@ export default function UploadPage() {
           }
         } catch (error) {
           console.error("Error accessing camera:", error)
+          toast({
+            title: "Camera Error",
+            description: "Could not access your camera. Please check permissions.",
+            variant: "destructive",
+          })
         }
       }
 
@@ -110,6 +146,17 @@ export default function UploadPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0]
+
+      // Validate file size (max 10MB)
+      if (selectedFile.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select a file smaller than 10MB",
+          variant: "destructive",
+        })
+        return
+      }
+
       setFile(selectedFile)
 
       // Create preview for images
@@ -122,11 +169,53 @@ export default function UploadPage() {
       } else {
         setPreview(null)
       }
+
+      // Reset scan results when a new file is selected
+      setScanResults(null)
+      setIsComplete(false)
     }
   }
 
   const handleCameraCapture = () => {
     setIsCameraOpen(true)
+    setDocumentScanActive(false)
+  }
+
+  const handleDocumentScannerOpen = () => {
+    setDocumentScanActive(true)
+  }
+
+  const handleDocumentCapture = async (imageData: string) => {
+    try {
+      setPreview(imageData)
+      setDocumentScanActive(false)
+
+      // Create a file from the image data
+      const response = await fetch(imageData)
+      const blob = await response.blob()
+      const capturedFile = new File([blob], "document-scan.jpg", { type: "image/jpeg" })
+      setFile(capturedFile)
+
+      // Automatically process the document
+      processDocumentWithAI(imageData)
+    } catch (error) {
+      console.error("Error handling document capture:", error)
+      toast({
+        title: "Error",
+        description: "Failed to process the captured document. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleCameraClose = () => {
+    setIsCameraOpen(false)
+    setDocumentScanActive(false)
+
+    // Stop camera stream
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop())
+    }
   }
 
   const switchCamera = () => {
@@ -179,26 +268,72 @@ export default function UploadPage() {
     }
   }
 
+  const processDocumentWithAI = async (imageData: string | Blob) => {
+    if (!imageData) {
+      if (!file && !preview) {
+        toast({
+          title: "No document selected",
+          description: "Please select or capture a document first.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Use the current file or preview
+      imageData = preview || (file as Blob)
+    }
+
+    setIsScanning(true)
+    setScanError(null)
+
+    try {
+      // Scan the document using our AI scanner
+      const analysis = await scanDocument(imageData)
+
+      // Update state with scan results
+      setScanResults(analysis)
+
+      // Also update recognized items for backward compatibility
+      setRecognizedItems(
+        analysis.scanResult.items.map((item) => ({
+          id: Math.random().toString(36).substr(2, 9),
+          name: item.name,
+          quantity: item.quantity || 1,
+          price: item.price || 0,
+          category: item.category || "Other",
+          status: "In Stock",
+        })),
+      )
+
+      setIsComplete(true)
+
+      toast({
+        title: "Document Scanned Successfully",
+        description: `${analysis.scanResult.items.length} items detected in the document.`,
+      })
+    } catch (error) {
+      console.error("Error scanning document:", error)
+      setScanError(error instanceof Error ? error.message : "An unknown error occurred")
+
+      toast({
+        title: "Scanning Error",
+        description: "Failed to scan the document. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsScanning(false)
+    }
+  }
+
   const processDocument = () => {
     if (!file) return
 
     setIsProcessing(true)
 
-    // Simulate AI processing
-    setTimeout(() => {
-      // Mock data that would come from AI document processing
-      const mockRecognizedItems = [
-        { id: 1, name: "Laptop - ThinkPad X1", quantity: 5, price: 1299.99, category: "Electronics" },
-        { id: 2, name: "Ergonomic Chair", quantity: 10, price: 249.99, category: "Furniture" },
-        { id: 3, name: "Wireless Keyboard", quantity: 15, price: 79.99, category: "Accessories" },
-        { id: 4, name: 'LED Monitor - 27"', quantity: 8, price: 349.99, category: "Electronics" },
-        { id: 5, name: "USB-C Hub", quantity: 20, price: 45.99, category: "Accessories" },
-      ]
-
-      setRecognizedItems(mockRecognizedItems)
+    // Use AI document scanner instead of the old processing logic
+    processDocumentWithAI(file).finally(() => {
       setIsProcessing(false)
-      setIsComplete(true)
-    }, 3000)
+    })
   }
 
   const startEditing = (index: number) => {
@@ -207,8 +342,8 @@ export default function UploadPage() {
     setEditValues({
       name: item.name,
       quantity: item.quantity.toString(),
-      price: item.price.toString(),
       category: item.category,
+      price: item.price.toString(),
     })
   }
 
@@ -258,18 +393,60 @@ export default function UploadPage() {
     setRecognizedItems(updatedItems)
   }
 
+  const handleEditExtractedItem = (item: ExtractedItem, index: number) => {
+    // This would open a dialog to edit the item
+    startEditing(index)
+  }
+
+  const handleDeleteExtractedItem = (index: number) => {
+    deleteItem(index)
+
+    // Also update scan results if they exist
+    if (scanResults) {
+      const updatedInsights = [...scanResults.insights]
+      updatedInsights.splice(index, 1)
+
+      setScanResults({
+        ...scanResults,
+        insights: updatedInsights,
+        summary: `Updated: ${updatedInsights.length} items remaining after deletion.`,
+      })
+    }
+  }
+
+  const handleAddItemsToInventory = (items: ExtractedItem[]) => {
+    // In a real app, this would add the items to the inventory database
+    toast({
+      title: "Items Added to Inventory",
+      description: `${items.length} items have been added to your inventory.`,
+    })
+
+    // Navigate to inventory page
+    router.push("/inventory")
+  }
+
   const saveToInventory = () => {
     // In a real app, this would save the processed items to the inventory
-    alert("Items saved to inventory successfully!")
+    toast({
+      title: "Success",
+      description: "Items saved to inventory successfully!",
+    })
     router.push("/inventory")
   }
 
   const createTemplate = () => {
     // In a real app, this would generate a template based on the selected type
-    alert(
-      `${templateType.charAt(0).toUpperCase() + templateType.slice(1)} template created! In a real app, this would download a template file.`,
-    )
+    toast({
+      title: `${templateType.charAt(0).toUpperCase() + templateType.slice(1)} template created!`,
+      description: "In a real app, this would download a template file.",
+    })
     setShowTemplateOptions(false)
+  }
+
+  const openFileUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    }
   }
 
   return (
@@ -363,17 +540,20 @@ export default function UploadPage() {
                         type="file"
                         className="hidden"
                         id="file-upload"
+                        ref={fileInputRef}
                         accept=".pdf,.jpg,.jpeg,.png"
                         onChange={handleFileChange}
                       />
-                      <label htmlFor="file-upload">
-                        <Button variant="outline" className="cursor-pointer" asChild>
-                          <span>
-                            <Upload className="mr-2 h-4 w-4" />
-                            Browse Files
-                          </span>
+                      <div className="flex flex-col sm:flex-row justify-center gap-2">
+                        <Button variant="outline" className="cursor-pointer" onClick={openFileUpload}>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Browse Files
                         </Button>
-                      </label>
+                        <Button variant="outline" className="cursor-pointer" onClick={handleDocumentScannerOpen}>
+                          <Scan className="mr-2 h-4 w-4" />
+                          Use Document Scanner
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -400,10 +580,16 @@ export default function UploadPage() {
                         <p className="text-sm font-medium">Take a picture of your invoice or items</p>
                         <p className="text-xs text-muted-foreground">Position the document clearly in the frame</p>
                       </div>
-                      <Button variant="outline" onClick={handleCameraCapture}>
-                        <Camera className="mr-2 h-4 w-4" />
-                        Open Camera
-                      </Button>
+                      <div className="flex flex-col sm:flex-row justify-center gap-2">
+                        <Button variant="outline" onClick={handleCameraCapture}>
+                          <Camera className="mr-2 h-4 w-4" />
+                          Open Camera
+                        </Button>
+                        <Button variant="outline" onClick={handleDocumentScannerOpen}>
+                          <Scan className="mr-2 h-4 w-4" />
+                          Use Document Scanner
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -423,162 +609,176 @@ export default function UploadPage() {
                 </>
               ) : (
                 <>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Process Document
+                  <Scan className="mr-2 h-4 w-4" />
+                  Process Document with AI
                 </>
               )}
             </Button>
           </CardFooter>
         </Card>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>AiCO-Recognized Items</CardTitle>
-            <CardDescription>
-              Our AiCO has identified the following items from your document. You can edit or add items as needed.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-muted-foreground">
-                  {recognizedItems.length} items recognized from your document
-                </p>
-                <Button onClick={addNewItem} variant="outline" size="sm">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Item
+        <div className="space-y-6">
+          {scanResults ? (
+            <DocumentScanResults
+              analysis={scanResults}
+              onAddToInventory={handleAddItemsToInventory}
+              onEditItem={handleEditExtractedItem}
+              onDeleteItem={handleDeleteExtractedItem}
+              isEditing={true}
+            />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>AiCO-Recognized Items</CardTitle>
+                <CardDescription>
+                  Our AiCO has identified the following items from your document. You can edit or add items as needed.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm text-muted-foreground">
+                      {recognizedItems.length} items recognized from your document
+                    </p>
+                    <Button onClick={addNewItem} variant="outline" size="sm">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Item
+                    </Button>
+                  </div>
+
+                  <div className="border rounded-md">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Item Name</TableHead>
+                          <TableHead>Quantity</TableHead>
+                          <TableHead>Price</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {recognizedItems.map((item, index) => (
+                          <TableRow key={item.id}>
+                            <TableCell>
+                              {editingItem === index ? (
+                                <Input
+                                  value={editValues.name}
+                                  onChange={(e) => handleEditChange("name", e.target.value)}
+                                />
+                              ) : (
+                                <div className="font-medium">{item.name}</div>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {editingItem === index ? (
+                                <Input
+                                  type="number"
+                                  value={editValues.quantity}
+                                  onChange={(e) => handleEditChange("quantity", e.target.value)}
+                                />
+                              ) : (
+                                <div>{item.quantity}</div>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {editingItem === index ? (
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={editValues.price}
+                                  onChange={(e) => handleEditChange("price", e.target.value)}
+                                />
+                              ) : (
+                                <div>${item.price.toFixed(2)}</div>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {editingItem === index ? (
+                                <Select
+                                  value={editValues.category}
+                                  onValueChange={(value) => handleEditChange("category", value)}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select category" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Electronics">Electronics</SelectItem>
+                                    <SelectItem value="Furniture">Furniture</SelectItem>
+                                    <SelectItem value="Accessories">Accessories</SelectItem>
+                                    <SelectItem value="Office Supplies">Office Supplies</SelectItem>
+                                    <SelectItem value="Other">Other</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <div>{item.category}</div>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end space-x-2">
+                                {editingItem === index ? (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => saveEdit(index)}
+                                    className="bg-green-600 hover:bg-green-700 text-white"
+                                  >
+                                    <Check className="h-4 w-4" />
+                                  </Button>
+                                ) : (
+                                  <Button size="sm" variant="ghost" onClick={() => startEditing(index)}>
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => deleteItem(index)}
+                                  className="text-red-500 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  <div className="pt-4">
+                    <Textarea placeholder="Add notes about these items (optional)" className="w-full h-24" />
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFile(null)
+                    setPreview(null)
+                    setIsComplete(false)
+                    setRecognizedItems([])
+                    setScanResults(null)
+                  }}
+                >
+                  Upload Another Document
                 </Button>
-              </div>
-
-              <div className="border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Item Name</TableHead>
-                      <TableHead>Quantity</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recognizedItems.map((item, index) => (
-                      <TableRow key={item.id}>
-                        <TableCell>
-                          {editingItem === index ? (
-                            <Input value={editValues.name} onChange={(e) => handleEditChange("name", e.target.value)} />
-                          ) : (
-                            <div className="font-medium">{item.name}</div>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {editingItem === index ? (
-                            <Input
-                              type="number"
-                              value={editValues.quantity}
-                              onChange={(e) => handleEditChange("quantity", e.target.value)}
-                            />
-                          ) : (
-                            <div>{item.quantity}</div>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {editingItem === index ? (
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={editValues.price}
-                              onChange={(e) => handleEditChange("price", e.target.value)}
-                            />
-                          ) : (
-                            <div>${item.price.toFixed(2)}</div>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {editingItem === index ? (
-                            <Select
-                              value={editValues.category}
-                              onValueChange={(value) => handleEditChange("category", value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select category" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Electronics">Electronics</SelectItem>
-                                <SelectItem value="Furniture">Furniture</SelectItem>
-                                <SelectItem value="Accessories">Accessories</SelectItem>
-                                <SelectItem value="Office Supplies">Office Supplies</SelectItem>
-                                <SelectItem value="Other">Other</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <div>{item.category}</div>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end space-x-2">
-                            {editingItem === index ? (
-                              <Button
-                                size="sm"
-                                onClick={() => saveEdit(index)}
-                                className="bg-green-600 hover:bg-green-700 text-white"
-                              >
-                                <Check className="h-4 w-4" />
-                              </Button>
-                            ) : (
-                              <Button size="sm" variant="ghost" onClick={() => startEditing(index)}>
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            )}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => deleteItem(index)}
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              <div className="pt-4">
-                <Textarea placeholder="Add notes about these items (optional)" className="w-full h-24" />
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setFile(null)
-                setPreview(null)
-                setIsComplete(false)
-                setRecognizedItems([])
-              }}
-            >
-              Upload Another Document
-            </Button>
-            <Button className="bg-seablue-600 hover:bg-seablue-700" onClick={saveToInventory}>
-              <Save className="mr-2 h-4 w-4" />
-              Save to Inventory
-            </Button>
-          </CardFooter>
-        </Card>
+                <Button className="bg-seablue-600 hover:bg-seablue-700" onClick={saveToInventory}>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save to Inventory
+                </Button>
+              </CardFooter>
+            </Card>
+          )}
+        </div>
       )}
 
       {/* Camera Dialog */}
-      <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
+      <Dialog open={isCameraOpen && !documentScanActive} onOpenChange={handleCameraClose}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Camera Capture</DialogTitle>
-            <DialogDescription>
-              Position your document or items clearly in the frame and take a photo.
-            </DialogDescription>
+            <DialogTitle>Take Profile Photo</DialogTitle>
+            <DialogDescription>Position yourself in the frame and take a photo for your profile.</DialogDescription>
           </DialogHeader>
           <div className="relative">
             <div className="overflow-hidden rounded-lg border border-gray-200">
@@ -597,11 +797,37 @@ export default function UploadPage() {
           <div className="flex justify-center mt-4">
             <Button onClick={capturePhoto} className="bg-seablue-600 hover:bg-seablue-700">
               <Camera className="mr-2 h-4 w-4" />
-              Capture Photo
+              Take Photo
             </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Document Scanner Dialog */}
+      <Dialog open={documentScanActive} onOpenChange={(open) => !open && handleCameraClose()}>
+        <DialogContent className="sm:max-w-4xl p-0">
+          <DocumentCamera onCapture={handleDocumentCapture} onCancel={handleCameraClose} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Error Alert */}
+      {scanError && (
+        <div className="fixed bottom-4 right-4 bg-red-100 border border-red-200 text-red-800 px-4 py-3 rounded-lg shadow-lg flex items-start max-w-md">
+          <AlertTriangle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="font-medium">Document Scanning Error</h3>
+            <p className="text-sm">{scanError}</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-2 text-red-800 hover:bg-red-200"
+            onClick={() => setScanError(null)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
